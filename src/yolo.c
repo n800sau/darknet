@@ -1,3 +1,4 @@
+#include <libgen.h>
 #include "network.h"
 #include "detection_layer.h"
 #include "cost_layer.h"
@@ -330,6 +331,26 @@ void validate_yolo_recall(char *cfgfile, char *weightfile)
     }
 }
 
+void show_write_image(char *ifname, image im, image sized)
+{
+    const char *dname = "predictions/";
+    const char *drname = "resized/";
+    char *bname = basename(ifname);
+    char *dfname = (char *)malloc(strlen(dname) + strlen(bname) + 1);
+    strcpy(dfname, dname);
+    strcat(dfname, bname);
+    printf("Writing to %s\n", dfname);
+    show_image(im, dfname);
+    save_image(im, dfname);
+    free(dfname);
+
+    dfname = (char *)malloc(strlen(drname) + strlen(bname) + 1);
+    strcpy(dfname, drname);
+    strcat(dfname, bname);
+    show_image(sized, dfname);
+    free(dfname);
+}
+
 void test_yolo(  char *cfgfile,
                  char *weightfile,
                  char *c_filename,
@@ -407,10 +428,7 @@ void test_yolo(  char *cfgfile,
         if ( b_draw_detections )
         {
             draw_detections(im, l.side*l.side*l.n, thresh, boxes, probs, c_class_names, img_class_labels, l.classes);
-            show_image(im, "predictions");
-            save_image(im, "predictions");
-
-            show_image(sized, "resized");
+            show_write_image(input, im, sized);
         }
 
 
@@ -507,7 +525,7 @@ void test_yolo_on_filelist(  char *cfgfile,
     size_t len = 0;
     ssize_t i_line_length;
 
-    fp_filelist = fopen( c_filelist, "r" );
+    fp_filelist = (strcmp(c_filelist, "-")) ? fopen( c_filelist, "r" ) : stdin;
     if (fp_filelist == NULL)
     {
         printf("Filelist is not readable!\n");
@@ -552,10 +570,7 @@ void test_yolo_on_filelist(  char *cfgfile,
         if ( b_draw_detections )
         {
             draw_detections(im, l.side*l.side*l.n, thresh, boxes, probs, c_class_names, img_class_labels, l.classes);
-            show_image(im, "predictions");
-            save_image(im, "predictions");
-
-            show_image(sized, "resized");
+            show_write_image(c_filename, im, sized);
         }
 
 
@@ -602,6 +617,8 @@ void test_yolo_on_filelist(  char *cfgfile,
         cvDestroyAllWindows();
         }
 #endif
+        printf("Processed!\n");
+        fflush(stdout);
     }
     
     fclose( fp_filelist );

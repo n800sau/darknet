@@ -3,21 +3,30 @@
 import sys, os, glob, subprocess, imghdr
 
 # first parameter is a directory
-DNAME = sys.argv[1]
-
 BBOXNAME = './bboxes.txt'
 DFLNAME = 'filelist.lst'
 DNFLNAME = 'processed.lst'
+SRCFLIST = 'filelist_src.lst'
+
 
 processed = [l.strip() for l in file(DNFLNAME, 'r').readlines()] if (os.path.exists(DNFLNAME)) else []
 
 dfl = file(DFLNAME, 'w')
-for root,dirnames,filenames in os.walk(os.path.expanduser(DNAME), followlinks=True):
-	for fname in filenames:
-		fname = os.path.join(root, fname)
-		if fname not in processed:
-			if imghdr.what(fname) in ('jpeg', 'png'):
-				dfl.write(fname + '\n')
+
+if len(sys.argv) > 1:
+
+	for root,dirnames,filenames in os.walk(os.path.expanduser(sys.argv[1]), followlinks=True):
+		for fname in filenames:
+			fname = os.path.join(root, fname)
+			if fname not in processed:
+				if imghdr.what(fname) in ('jpeg', 'png'):
+					dfl.write(fname + '\n')
+else:
+
+	for fname in file(SRCFLIST):
+		if fname.strip() not in processed:
+			dfl.write(fname)
+
 dfl.close()
 
 darknet = subprocess.Popen([
